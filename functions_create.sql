@@ -61,20 +61,38 @@ RETURNS refcursor AS $$
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION
-get_ford_mustang_visit(
-	OUT p_res   refcursor,
+get_selected_visit(
+	OUT p_res     refcursor,
+	p_bracelet_id uuid
 )
 RETURNS refcursor AS $$
 	OPEN p_res FOR
-	SELECT ford_mustanf FROM visit WHERE ;
+	SELECT * FROM visit WHERE bracelet_id = p_bracelet_id;
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION
-get_service(
-	OUT p_res refcursor,
-
+get_current_service(
+	OUT p_res     refcursor,
+	p_bracelet_id uuid,
 )
-RETURNS AS $$
+RETURNS refcursor AS $$
+	OPEN p_res FOR
+	SELECT st.name, s.start_time FROM service_type AS st
+	FULL OUTER JOIN service AS s ON st.service_id = s.service_id
+	LEFT JOIN visit AS v ON s.visit_id = v.visit_id
+	HAVING v.bracelet_id = p_bracelet_id AND s.end_time IS NULL;
+$$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION
+get_all_service(
+	OUT p_res     refcursor,
+	p_bracelet_id uuid,
+)
+RETURNS refcursor AS $$
+	OPEN p_res FOR
+	SELECT st.name, st.cost, s.start_time, s.end_time FROM service_type AS st
+	FULL OUTER JOIN service AS s ON st.service_id = s.service_id
+	LEFT JOIN visit AS v ON s.visit_id = v.visit_id
+	WHERE v.bracelet_id = p_bracelet_id;
 $$ LANGUAGE SQL;
 
