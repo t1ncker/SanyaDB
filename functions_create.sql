@@ -13,13 +13,24 @@ $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION
 end_visit (
-	p_visit_id integer,
-	p_end_time timestamp
+	p_bracelet_id uuid,
+	p_end_time    timestamp
 )
 RETURNS void AS $$
+	WITH curr_visit AS (
+		SELECT visit_id FROM visit
+		WHERE bracelet_id = p_bracelet_id
+	)
+	UPDATE service
+	SET end_time = p_end_time
+	FROM visit
+	WHERE service.visit_id = curr_visit.visit_id
+	AND end_time IS NULL;
+
+
 	UPDATE visit
 	SET end_time = p_end_time
-	WHERE visit_id = p_visit_id;
+	WHERE bracelet_id = p_bracelet_id;
 $$ LANGUAGE SQL;
 
 
@@ -42,7 +53,7 @@ end_service (
 	p_service_id integer,
 	p_end_time   timestamp
 )
-RETURNS integer AS $$
+RETURNS void AS $$
 	UPDATE service
 	SET end_time = p_end_time
 	WHERE service_id = p_service_id;
