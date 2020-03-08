@@ -1,4 +1,4 @@
-BEGIN;
+BEGIN
 
 CREATE TABLE service_type (
 	servtype_id    SERIAL PRIMARY KEY,
