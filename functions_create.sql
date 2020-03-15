@@ -6,10 +6,23 @@ new_visit(
 	p_start_time  timestamp
 )
 RETURNS integer AS $$
+DECLARE
+	res_id integer;
 BEGIN
-	INSERT INTO visit(bracelet_id, start_time)
-	VALUES(p_bracelet_id, p_start_time)
-	RETURNING visit_id AS result;
+	if (SELECT COUNT(*) FROM visit
+	WHERE visit.bracelet_id = p_bracelet_id AND end_time IS NULL 
+	LIMIT 1) = 0 then
+		INSERT INTO visit(bracelet_id, start_time)
+		VALUES(p_bracelet_id, p_start_time)
+		RETURNING visit_id INTO res_id;
+
+		INSERT INTO service(servtype_id, visit_id, start_time)
+		VALUES(1, res_id, p_start_time);
+	else
+		RAISE EXCEPTION 'Посещение по данному браслету уже открыто';
+	end if;
+
+	RETURN res_id;
 END;
 $$ LANGUAGE plpgSQL;
 
@@ -26,8 +39,7 @@ BEGIN
 	WHERE service.visit_id = (
 		SELECT visit_id FROM visit
 		WHERE bracelet_id = p_bracelet_id
-		)
-	AND service.end_time IS NULL;
+		AND visit.end_time IS NULL);
 
 
 	UPDATE visit
